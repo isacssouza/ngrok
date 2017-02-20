@@ -27,6 +27,12 @@ function StringBuffer()
     this.buffer = []; 
 } 
 
+function b64DecodeUnicode(str) {
+    return decodeURIComponent(Array.prototype.map.call(atob(str), function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+}
+
 StringBuffer.prototype.append = function append(string)
 { 
     this.buffer.push(string); 
@@ -79,7 +85,6 @@ window.Base64 =
 
     decode : function (input)
     {
-        var output = new StringBuffer();
         var outputBytes = [];
 
         var enumerator = new Base64DecodeEnumerator(input);
@@ -88,15 +93,11 @@ window.Base64 =
             var charCode = enumerator.current;
             outputBytes.push(charCode);
 
-            if (charCode < 128)
-                output.append(String.fromCharCode(charCode));
-            else if ((charCode > 191) && (charCode < 224))
+            if ((charCode > 191) && (charCode < 224))
             {
                 enumerator.moveNext();
                 var charCode2 = enumerator.current;
                 outputBytes.push(charCode2);
-
-                output.append(String.fromCharCode(((charCode & 31) << 6) | (charCode2 & 63)));
             }
             else
             {
@@ -107,14 +108,12 @@ window.Base64 =
                 enumerator.moveNext();
                 var charCode3 = enumerator.current;
                 outputBytes.push(charCode3);
-
-                output.append(String.fromCharCode(((charCode & 15) << 12) | ((charCode2 & 63) << 6) | (charCode3 & 63)));
             }
         }
 
         return {
             "bytes": outputBytes,
-            "text": output.toString()
+            "text": b64DecodeUnicode(input)
         };
     }
 };
